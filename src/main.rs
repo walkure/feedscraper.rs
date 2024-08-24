@@ -64,6 +64,7 @@ fn write_file(path: PathBuf, content: &str) -> Result<(), Box<dyn std::error::Er
     use std::fs::File;
     use std::io::Write;
 
+    println!("write file: {}", path.display());
     let mut file = File::create(path)?;
     write!(file, "{}", content)?;
     file.flush()?;
@@ -108,6 +109,7 @@ impl Scraper<'_> {
 
     // generate Atom feed
     let mut feed = Feed::default();
+    println!("URL:{}\nTITLE:{}",self.target.to_string(), feed_title_element.inner_html());
     feed.set_title(feed_title_element.inner_html());
 
     let jp = chrono::offset::FixedOffset::east_opt(9 * 3600).unwrap();
