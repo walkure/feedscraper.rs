@@ -22,7 +22,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         category_selector: Some(scraper::Selector::parse("div.category > a").unwrap()),
         date_selector: scraper::Selector::parse("div.date").unwrap(),
         date_format: "%Y/%m/%d",
-        feed_title_selector: scraper::Selector::parse("meta[property='og:title']").unwrap(),
+        feed_title_selector: scraper::Selector::parse("div.logo > a").unwrap(),
         column_selector: scraper::Selector::parse("section.sec-articles div.article-list > div.row > div.col").unwrap(),
     }.scrape()?;
 
