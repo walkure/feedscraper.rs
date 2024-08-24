@@ -111,6 +111,14 @@ impl Scraper<'_> {
     let mut feed = Feed::default();
     println!("URL:{}\nTITLE:{}",self.target.to_string(), feed_title_element.inner_html());
     feed.set_title(feed_title_element.inner_html());
+    feed.set_links(vec![atom_syndication::Link {
+        href: self.target.to_string(),
+        mime_type: None,
+        hreflang: None,
+        title: None,
+        length: None,
+        rel: "alternate".to_string(),
+    }]);
 
     let jp = chrono::offset::FixedOffset::east_opt(9 * 3600).unwrap();
 
