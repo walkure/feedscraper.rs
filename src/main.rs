@@ -18,6 +18,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let feed = Scraper{
         target: "https://www.spf.org/iina/articles/",
         title_selector: scraper::Selector::parse("h3.title > a").unwrap(),
+        href_selector: scraper::Selector::parse("h3.title > a").unwrap(),
         author_selector: scraper::Selector::parse("div.author > a").unwrap(),
         category_selector: Some(scraper::Selector::parse("div.category > a").unwrap()),
         date_selector: scraper::Selector::parse("div.date").unwrap(),
@@ -32,6 +33,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let feed = Scraper{
         target: "https://www.spf.org/jpus-insights/spf-america-monitor/",
         title_selector: scraper::Selector::parse("a[class='card-news-featured js-card-news-featured']").unwrap(),
+        href_selector: scraper::Selector::parse("a[class='card-news-featured js-card-news-featured']").unwrap(),
         author_selector: scraper::Selector::parse("p.author").unwrap(),
         category_selector: None,
         date_selector: scraper::Selector::parse("p.date").unwrap(),
@@ -44,17 +46,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     write_file(path, &feed.to_string())?;
 
     let feed = Scraper{
-        target: "https://www.nri.com/jp/knowledge/blog/lst?page=1&pageSize=30",
-        title_selector: scraper::Selector::parse("p._title > a").unwrap(),
-        author_selector: scraper::Selector::parse("p.author").unwrap(),
+        target: "https://www.jiia.or.jp/research-report/archive.html",
+        title_selector: scraper::Selector::parse("h3.tit-article").unwrap(),
+        href_selector: scraper::Selector::parse("article > a").unwrap(),
+        author_selector: scraper::Selector::parse("dl > dd").unwrap(),
         category_selector: None,
-        date_selector: scraper::Selector::parse("div._day > p").unwrap(),
-        date_format: "%Y/%m/%d",
+        date_selector: scraper::Selector::parse("dl > dt").unwrap(),
+        date_format: "%Y-%m-%d",
         feed_title_selector: scraper::Selector::parse("title").unwrap(),
-        column_selector: scraper::Selector::parse("div.l-news > ul > li").unwrap(),
+        column_selector: scraper::Selector::parse("div.inner > ul.list-article > li").unwrap(),
     }.scrape()?;
 
-    let path = base_path.join("./nri.atom");
+    let path = base_path.join("./jiia.atom");
     write_file(path, &feed.to_string())?;
 
     Ok(())
@@ -91,6 +94,7 @@ pub fn _rel2abs(base_url: &str, input: &str) -> Result<String, ParseError> {
 struct Scraper<'a>{
     target: &'a str,
     title_selector: scraper::Selector,
+    href_selector: scraper::Selector,
     author_selector: scraper::Selector,
     category_selector: Option<scraper::Selector>,
     date_selector: scraper::Selector,
@@ -169,7 +173,7 @@ impl Scraper<'_> {
         }
 
 
-        let href  = title_element.attr("href").ok_or("href attr not found")?;
+        let href  = element.select(&self.href_selector).next().ok_or("href entity not found")?.attr("href").ok_or("href attr not found")?;
         let abs_href = _rel2abs(self.target, href)?;
 
         entry.set_id(href);
