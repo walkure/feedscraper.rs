@@ -16,7 +16,8 @@ docker run --rm -it -v "$(pwd)"/atom:/atom ghcr.io/walkure/feedscraper.rs:latest
 
 - [国際情報ネットワーク分析 IINA](https://www.spf.org/iina/articles/)
 - [SPFアメリカ現状モニター](https://www.spf.org/jpus-insights/spf-america-monitor/)
-- [NRIコラム](https://www.nri.com/jp/knowledge/blog)
+- [NRIコラム](https://www.nri.com/jp/media/latest/)
+- [日本国際問題研究所](https://www.jiia.or.jp/research-report/archive.html)
 
 ## License
 
