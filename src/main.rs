@@ -19,7 +19,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         target: "https://www.spf.org/iina/articles/",
         title_selector: scraper::Selector::parse("h3.title > a").unwrap(),
         href_selector: scraper::Selector::parse("h3.title > a").unwrap(),
-        author_selector: scraper::Selector::parse("div.author > a").unwrap(),
+        author_selector: Some(scraper::Selector::parse("div.author > a").unwrap()),
         category_selector: Some(scraper::Selector::parse("div.category > a").unwrap()),
         date_selector: scraper::Selector::parse("div.date").unwrap(),
         date_format: "%Y/%m/%d",
@@ -34,7 +34,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         target: "https://www.spf.org/jpus-insights/spf-america-monitor/",
         title_selector: scraper::Selector::parse("a[class='card-news-featured js-card-news-featured']").unwrap(),
         href_selector: scraper::Selector::parse("a[class='card-news-featured js-card-news-featured']").unwrap(),
-        author_selector: scraper::Selector::parse("p.author").unwrap(),
+        author_selector: Some(scraper::Selector::parse("p.author").unwrap()),
         category_selector: None,
         date_selector: scraper::Selector::parse("p.date").unwrap(),
         date_format: "%Y.%m.%d",
@@ -49,7 +49,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         target: "https://www.jiia.or.jp/research-report/archive.html",
         title_selector: scraper::Selector::parse("h3.tit-article").unwrap(),
         href_selector: scraper::Selector::parse("article > a").unwrap(),
-        author_selector: scraper::Selector::parse("dl > dd").unwrap(),
+        author_selector: Some(scraper::Selector::parse("dl > dd").unwrap()),
         category_selector: None,
         date_selector: scraper::Selector::parse("dl > dt").unwrap(),
         date_format: "%Y-%m-%d",
@@ -59,6 +59,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let path = base_path.join("./jiia.atom");
     write_file(path, &feed.to_string())?;
+
+        let feed = Scraper{
+        target: "https://www.nri.com/jp/media/latest/",
+        title_selector: scraper::Selector::parse("figcaption > h3[class='--title']").unwrap(),
+        href_selector: scraper::Selector::parse("a").unwrap(),
+        author_selector: None,
+        category_selector: None,
+        date_selector: scraper::Selector::parse("time").unwrap(),
+        date_format: "%Y-%m-%d",
+        feed_title_selector: scraper::Selector::parse("title").unwrap(),
+        column_selector: scraper::Selector::parse("ul[class='lst-cardindex--media --col-3'] > li").unwrap(),
+    }.scrape()?;
+
+    let path = base_path.join("./nri.atom");
+    write_file(path, &feed.to_string())?;
+
 
     Ok(())
 }
@@ -95,7 +111,7 @@ struct Scraper<'a>{
     target: &'a str,
     title_selector: scraper::Selector,
     href_selector: scraper::Selector,
-    author_selector: scraper::Selector,
+    author_selector: Option<scraper::Selector>,
     category_selector: Option<scraper::Selector>,
     date_selector: scraper::Selector,
     date_format: &'a str,
@@ -136,20 +152,27 @@ impl Scraper<'_> {
 
         let mut entry = atom_syndication::Entry::default();
 
-        if let Some(author_element) = element.select(&self.author_selector).next() {
-            entry.set_authors(vec![atom_syndication::Person {
-                name: remove_whitespace(author_element.inner_html()),
-                email: None,
-                uri: None,
-            }]);
+        if let Some(author_selector) = &self.author_selector {
+            if let Some(author_element) = element.select(author_selector).next() {
+                entry.set_authors(vec![atom_syndication::Person {
+                    name: remove_whitespace(author_element.inner_html()),
+                    email: None,
+                    uri: None,
+                }]);
+            }
         }
 
         let date_element = element.select(&self.date_selector).next().ok_or("date tag not found")?;
 
+        // let binding required.
+        let tss = match date_element.attr("datetime"){
+            Some(str) => str,
+            None => &remove_whitespace(date_element.inner_html()),
+        };
+
         // parse date string to chrono::NaiveDateTime and convert to chrono::DateTime<chrono::offset::FixedOffset>
         // and_hms_opt(0,0,0) and east_opt(9*3600) MUST success.
-        let updated = chrono::NaiveDate::parse_from_str(&remove_whitespace(date_element.inner_html())
-        , self.date_format)?.and_hms_opt(0,0,0).unwrap();
+        let updated = chrono::NaiveDate::parse_from_str(tss, self.date_format)?.and_hms_opt(0,0,0).unwrap();
 
         entry.set_updated(FixedDateTime::from_naive_utc_and_offset(updated, jp));
 
